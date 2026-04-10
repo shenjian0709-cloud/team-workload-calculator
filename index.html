@@ -1,0 +1,845 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>团队动态负荷评估系统</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg-1: #edf6f5;
+            --bg-2: #fef7ed;
+            --card: #ffffff;
+            --text: #1f2937;
+            --muted: #6b7280;
+            --line: #e5e7eb;
+            --primary: #0f766e;
+            --primary-soft: #ccfbf1;
+            --warn: #d97706;
+            --danger: #dc2626;
+            --ok: #16a34a;
+            --shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            padding: 24px;
+            font-family: "Noto Sans SC", "Microsoft YaHei", "PingFang SC", sans-serif;
+            color: var(--text);
+            background:
+                radial-gradient(circle at 10% 20%, rgba(20, 184, 166, 0.16), transparent 35%),
+                radial-gradient(circle at 90% 10%, rgba(251, 146, 60, 0.14), transparent 35%),
+                linear-gradient(135deg, var(--bg-1), var(--bg-2));
+            min-height: 100vh;
+        }
+
+        .page-title {
+            max-width: 1300px;
+            margin: 0 auto 16px auto;
+            font-weight: 800;
+            letter-spacing: 0.02em;
+            color: #134e4a;
+        }
+
+        .container {
+            max-width: 1300px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: minmax(320px, 420px) 1fr;
+            gap: 18px;
+        }
+
+        .card {
+            background: var(--card);
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            border-radius: 14px;
+            box-shadow: var(--shadow);
+            padding: 18px;
+            animation: enterUp 0.5s ease both;
+        }
+
+        h2 {
+            margin: 0 0 12px 0;
+            font-size: 1.1rem;
+            color: #0f172a;
+        }
+
+        .subtle {
+            color: var(--muted);
+            font-size: 0.9rem;
+            margin: 0;
+        }
+
+        .panel-right {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .form-group { margin-bottom: 14px; }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 700;
+            font-size: 0.9rem;
+        }
+
+        select, input[type="text"], input[type="range"], button {
+            width: 100%;
+            border-radius: 8px;
+            border: 1px solid #d1d5db;
+            font-size: 0.92rem;
+        }
+
+        select, input[type="text"] {
+            padding: 9px 10px;
+            background: #fff;
+        }
+
+        .button-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin: 12px 0;
+        }
+
+        button {
+            padding: 10px 12px;
+            cursor: pointer;
+            border: none;
+            background: #e2e8f0;
+            color: #0f172a;
+            font-weight: 700;
+            transition: transform 0.15s ease, opacity 0.2s ease;
+        }
+
+        button:hover {
+            transform: translateY(-1px);
+            opacity: 0.92;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #0f766e, #0d9488);
+            color: #fff;
+        }
+
+        .slider-wrap {
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            padding: 10px;
+            margin-bottom: 12px;
+            background: #f8fafc;
+        }
+
+        .slider-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 6px;
+        }
+
+        .slider-val {
+            font-weight: 800;
+            color: var(--primary);
+            min-width: 28px;
+            text-align: right;
+        }
+
+        .slider-help {
+            margin: 6px 0 0 0;
+            font-size: 0.82rem;
+            color: var(--muted);
+            line-height: 1.45;
+        }
+
+        .result-box {
+            text-align: center;
+            padding: 18px;
+            border-radius: 10px;
+            margin-top: 14px;
+            color: #fff;
+            background: #16a34a;
+            transition: background 0.3s;
+        }
+
+        .result-box h1 {
+            margin: 2px 0;
+            font-size: 2.7rem;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+        }
+
+        .member-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 12px;
+        }
+
+        .member-card {
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            padding: 12px;
+            background: #fff;
+            cursor: pointer;
+        }
+
+        .member-card.active {
+            border-color: #14b8a6;
+            box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.15);
+        }
+
+        .member-card h4 {
+            margin: 0 0 6px 0;
+            font-size: 0.98rem;
+        }
+
+        .pill {
+            display: inline-block;
+            font-size: 0.75rem;
+            border-radius: 999px;
+            padding: 3px 8px;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .pill-ok { background: var(--ok); }
+        .pill-warn { background: var(--warn); }
+        .pill-danger { background: var(--danger); }
+
+        .tips {
+            margin: 8px 0 0 0;
+            padding-left: 18px;
+            color: #334155;
+            font-size: 0.9rem;
+        }
+
+        .tips li { margin: 4px 0; }
+
+        .history-list {
+            margin: 8px 0 0 0;
+            padding-left: 18px;
+            color: #475569;
+            font-size: 0.88rem;
+        }
+
+        .chart-fallback {
+            font-size: 0.9rem;
+            color: var(--warn);
+            margin-top: 8px;
+            display: none;
+        }
+
+        .footer-note {
+            margin-top: 6px;
+            color: #64748b;
+            font-size: 0.84rem;
+        }
+
+        @keyframes enterUp {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @media (max-width: 980px) {
+            body { padding: 14px; }
+            .container { grid-template-columns: 1fr; }
+            .grid-2 { grid-template-columns: 1fr; }
+            .result-box h1 { font-size: 2.2rem; }
+        }
+    </style>
+</head>
+<body>
+    <h1 class="page-title">团队动态负荷评估系统（多成员版）</h1>
+
+    <div class="container">
+        <div class="card">
+            <h2>参数设定</h2>
+            <p class="subtle">支持添加多个成员并分别调参，当前编辑成员会高亮显示。</p>
+
+            <div class="form-group">
+                <label for="member-select">当前成员</label>
+                <select id="member-select" aria-label="当前成员"></select>
+            </div>
+
+            <div class="button-row">
+                <button id="btn-add" class="btn-primary" type="button">添加成员</button>
+                <button id="btn-remove" type="button">移除当前成员</button>
+            </div>
+
+            <div class="form-group">
+                <label for="member-name">成员名称</label>
+                <input id="member-name" type="text" placeholder="输入成员名称" aria-label="成员名称" />
+            </div>
+
+            <div class="form-group">
+                <label for="capability">核心能力（Capability）</label>
+                <select id="capability" aria-label="核心能力">
+                    <option value="tech">技术攻坚型（底层/代码）</option>
+                    <option value="project">项目交付型（进度/统筹）</option>
+                    <option value="comms">沟通协调型（需求/跨部门）</option>
+                    <option value="general">综合全栈型（多面手）</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="task">当前主要任务（Current Task）</label>
+                <select id="task" aria-label="当前主要任务">
+                    <option value="tech">底层技术排查与高强度编码</option>
+                    <option value="project">复杂项目统筹、环境集成与发布</option>
+                    <option value="comms">高频跨部门会议、需求扯皮对齐</option>
+                    <option value="general">综合性常规业务维护</option>
+                </select>
+            </div>
+
+            <hr style="border: 0; border-top: 1px solid var(--line); margin: 16px 0;" />
+
+            <div id="sliders"></div>
+
+            <div class="button-row">
+                <button id="btn-reset" type="button">重置当前成员</button>
+                <button id="btn-snapshot" type="button">保存快照</button>
+            </div>
+
+            <div class="button-row" style="grid-template-columns: 1fr;">
+                <button id="btn-export" type="button">导出团队数据（JSON）</button>
+            </div>
+        </div>
+
+        <div class="panel-right">
+            <div class="card">
+                <h2>当前成员结果</h2>
+                <p><strong>基础负荷（Base TWI）:</strong> <span id="base-twi">0.00</span></p>
+                <p>
+                    <strong>能力阻力系数（CFC）:</strong>
+                    <span id="cfc-value" style="font-weight: 800; color: #ea580c;">1.0</span>
+                    <span id="cfc-desc" class="subtle">正常匹配</span>
+                </p>
+
+                <div id="result-card" class="result-box">
+                    <p>最终真实负荷（Final TWI）</p>
+                    <h1 id="final-twi">0.00</h1>
+                    <p id="status-text">状态：健康有余力</p>
+                </div>
+
+                <ul id="member-advice" class="tips"></ul>
+                <p class="footer-note">说明：建议会结合负荷分值与能力任务匹配度自动生成。</p>
+            </div>
+
+            <div class="grid-2">
+                <div class="card">
+                    <h2>当前成员维度雷达图</h2>
+                    <canvas id="radarChart" height="200"></canvas>
+                    <div id="chart-fallback" class="chart-fallback">图表库加载失败，仅展示数值结果。</div>
+                </div>
+
+                <div class="card">
+                    <h2>团队整体分析</h2>
+                    <p><strong>团队平均 Final TWI:</strong> <span id="team-avg">0.00</span></p>
+                    <p><strong>超负荷人数:</strong> <span id="team-overload">0</span></p>
+                    <ul id="team-advice" class="tips"></ul>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>成员状态看板</h2>
+                <div id="member-grid" class="member-grid"></div>
+            </div>
+
+            <div class="card">
+                <h2>快照历史（当前成员）</h2>
+                <ul id="history-list" class="history-list"></ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const METRICS = [
+            {
+                key: "m1",
+                label: "计划内产出",
+                weight: 0.35,
+                defaultValue: 7,
+                help: "衡量可预期目标的完成压力，分值越高表示既定交付压力越大。"
+            },
+            {
+                key: "m2",
+                label: "突发与救火",
+                weight: 0.25,
+                defaultValue: 4,
+                help: "衡量被动插入任务与紧急响应频率，分值越高表示节奏越容易被打断。"
+            },
+            {
+                key: "m3",
+                label: "并行与切换损耗",
+                weight: 0.15,
+                defaultValue: 5,
+                help: "衡量多任务并行导致的上下文切换成本，分值越高表示专注时间被侵蚀。"
+            },
+            {
+                key: "m4",
+                label: "协作与指导损耗",
+                weight: 0.15,
+                defaultValue: 6,
+                help: "衡量会议、沟通、带教等非产出性但必要投入，分值越高表示协作成本越高。"
+            },
+            {
+                key: "m5",
+                label: "系统技术复杂度",
+                weight: 0.10,
+                defaultValue: 7,
+                help: "衡量技术栈、架构耦合、历史包袱带来的处理难度。"
+            }
+        ];
+
+        const THRESHOLDS = {
+            healthy: 6.5,
+            warning: 8.0
+        };
+
+        const CFC_MATRIX = {
+            tech: { tech: 0.8, project: 1.1, comms: 1.4, general: 1.0 },
+            project: { tech: 1.3, project: 0.8, comms: 1.1, general: 1.0 },
+            comms: { tech: 1.4, project: 1.0, comms: 0.8, general: 1.0 },
+            general: { tech: 1.0, project: 1.0, comms: 1.0, general: 1.0 }
+        };
+
+        const CFC_RULES = [
+            { test: (v) => v < 1.0, desc: "高度契合（顺风局，负荷减轻）" },
+            { test: (v) => v > 1.0 && v < 1.3, desc: "轻微错配（耗时增加）" },
+            { test: (v) => v >= 1.3, desc: "严重错配（逆风局，极度消耗）" }
+        ];
+
+        const capabilityText = {
+            tech: "技术攻坚型",
+            project: "项目交付型",
+            comms: "沟通协调型",
+            general: "综合全栈型"
+        };
+
+        const taskText = {
+            tech: "底层技术排查与高强度编码",
+            project: "复杂项目统筹、环境集成与发布",
+            comms: "高频跨部门会议、需求扯皮对齐",
+            general: "综合性常规业务维护"
+        };
+
+        const state = {
+            members: [],
+            activeMemberId: null,
+            chart: null,
+            hasChart: typeof window.Chart !== "undefined"
+        };
+
+        const dom = {
+            memberSelect: document.getElementById("member-select"),
+            memberName: document.getElementById("member-name"),
+            capability: document.getElementById("capability"),
+            task: document.getElementById("task"),
+            sliders: document.getElementById("sliders"),
+            baseTwi: document.getElementById("base-twi"),
+            cfcValue: document.getElementById("cfc-value"),
+            cfcDesc: document.getElementById("cfc-desc"),
+            finalTwi: document.getElementById("final-twi"),
+            statusText: document.getElementById("status-text"),
+            resultCard: document.getElementById("result-card"),
+            memberAdvice: document.getElementById("member-advice"),
+            teamAvg: document.getElementById("team-avg"),
+            teamOverload: document.getElementById("team-overload"),
+            teamAdvice: document.getElementById("team-advice"),
+            memberGrid: document.getElementById("member-grid"),
+            historyList: document.getElementById("history-list"),
+            chartFallback: document.getElementById("chart-fallback")
+        };
+
+        function clampNumber(value, fallback = 0) {
+            const n = Number(value);
+            return Number.isFinite(n) ? n : fallback;
+        }
+
+        function toFixedSafe(value, digits = 2) {
+            return clampNumber(value).toFixed(digits);
+        }
+
+        function createDefaultMetrics() {
+            const metrics = {};
+            METRICS.forEach((m) => {
+                metrics[m.key] = m.defaultValue;
+            });
+            return metrics;
+        }
+
+        function createMember(name) {
+            return {
+                id: `m_${Date.now()}_${Math.floor(Math.random() * 10000)}`,
+                name,
+                capability: "general",
+                task: "general",
+                metrics: createDefaultMetrics(),
+                history: []
+            };
+        }
+
+        function getActiveMember() {
+            return state.members.find((m) => m.id === state.activeMemberId) || null;
+        }
+
+        function computeMemberResult(member) {
+            const cfc = CFC_MATRIX[member.capability][member.task];
+            const baseTWI = METRICS.reduce((sum, m) => {
+                return sum + clampNumber(member.metrics[m.key], m.defaultValue) * m.weight;
+            }, 0);
+            const finalTWI = baseTWI * cfc;
+
+            return {
+                baseTWI,
+                cfc,
+                finalTWI,
+                status: getStatus(finalTWI),
+                cfcDesc: getCfcDesc(cfc)
+            };
+        }
+
+        function getCfcDesc(cfc) {
+            const hit = CFC_RULES.find((r) => r.test(cfc));
+            return hit ? hit.desc : "正常匹配";
+        }
+
+        function getStatus(finalTWI) {
+            if (finalTWI < THRESHOLDS.healthy) {
+                return { text: "状态：健康有余力", color: "#16a34a", level: "ok" };
+            }
+            if (finalTWI <= THRESHOLDS.warning) {
+                return { text: "状态：健康饱和（注意观察）", color: "#d97706", level: "warn" };
+            }
+            return { text: "状态：超负荷预警（需立刻干预）", color: "#dc2626", level: "danger" };
+        }
+
+        function buildSliderUi() {
+            dom.sliders.innerHTML = "";
+            METRICS.forEach((m) => {
+                const wrap = document.createElement("div");
+                wrap.className = "slider-wrap";
+                wrap.innerHTML = `
+                    <div class="slider-head">
+                        <label for="${m.key}">${m.label}（${Math.round(m.weight * 100)}%权重）</label>
+                        <span class="slider-val" id="val-${m.key}">0</span>
+                    </div>
+                    <input type="range" id="${m.key}" min="1" max="10" step="1" aria-label="${m.label}" />
+                    <p class="slider-help">${m.help}</p>
+                `;
+                dom.sliders.appendChild(wrap);
+            });
+
+            METRICS.forEach((m) => {
+                document.getElementById(m.key).addEventListener("input", onFormChange);
+                document.getElementById(m.key).addEventListener("change", onFormChange);
+            });
+        }
+
+        function renderMemberSelect() {
+            dom.memberSelect.innerHTML = "";
+            state.members.forEach((member) => {
+                const op = document.createElement("option");
+                op.value = member.id;
+                op.textContent = member.name;
+                dom.memberSelect.appendChild(op);
+            });
+
+            dom.memberSelect.value = state.activeMemberId;
+        }
+
+        function renderForm() {
+            const member = getActiveMember();
+            if (!member) return;
+
+            dom.memberName.value = member.name;
+            dom.capability.value = member.capability;
+            dom.task.value = member.task;
+
+            METRICS.forEach((m) => {
+                const input = document.getElementById(m.key);
+                const v = clampNumber(member.metrics[m.key], m.defaultValue);
+                input.value = v;
+                document.getElementById(`val-${m.key}`).innerText = String(v);
+            });
+        }
+
+        function renderCurrentResult() {
+            const member = getActiveMember();
+            if (!member) return;
+
+            const result = computeMemberResult(member);
+            dom.baseTwi.innerText = toFixedSafe(result.baseTWI, 2);
+            dom.cfcValue.innerText = toFixedSafe(result.cfc, 1);
+            dom.cfcDesc.innerText = `- ${result.cfcDesc}`;
+            dom.finalTwi.innerText = toFixedSafe(result.finalTWI, 2);
+            dom.statusText.innerText = result.status.text;
+            dom.resultCard.style.background = result.status.color;
+            renderMemberAdvice(member, result);
+            renderHistory(member);
+            updateRadarChart(member);
+        }
+
+        function renderMemberAdvice(member, result) {
+            const tips = [];
+
+            if (result.status.level === "danger") {
+                tips.push("立即削减成员并行任务，优先保障关键交付路径。", "建议本周内安排任务重分配，减少高切换场景。");
+            } else if (result.status.level === "warn") {
+                tips.push("当前处于高位运行区间，建议设定每日任务上限并跟踪波动。");
+            } else {
+                tips.push("可在可控范围内承担少量增量任务，并保留缓冲时间。");
+            }
+
+            if (result.cfc >= 1.3) {
+                tips.push("能力-任务错配明显，建议由匹配成员接手高耗环节或进行结对支持。");
+            } else if (result.cfc > 1.0) {
+                tips.push("存在轻度错配，可通过模板化流程或复用经验降低摩擦。");
+            }
+
+            const highMetric = METRICS
+                .map((m) => ({ ...m, value: member.metrics[m.key] }))
+                .sort((a, b) => b.value - a.value)[0];
+            if (highMetric && highMetric.value >= 8) {
+                tips.push(`最高压力维度是“${highMetric.label}”，建议优先针对该维度做减压动作。`);
+            }
+
+            dom.memberAdvice.innerHTML = tips.map((t) => `<li>${t}</li>`).join("");
+        }
+
+        function renderTeam() {
+            const results = state.members.map((m) => ({ member: m, result: computeMemberResult(m) }));
+            const avg = results.length ? results.reduce((s, x) => s + x.result.finalTWI, 0) / results.length : 0;
+            const overloadCount = results.filter((x) => x.result.status.level === "danger").length;
+
+            dom.teamAvg.innerText = toFixedSafe(avg, 2);
+            dom.teamOverload.innerText = String(overloadCount);
+
+            const teamTips = [];
+            if (overloadCount >= 2) {
+                teamTips.push("团队存在多点超负荷，建议立即做任务优先级收敛与资源再分配。");
+            }
+            if (avg > THRESHOLDS.warning) {
+                teamTips.push("团队均值已越过预警线，建议减少非核心会议并压缩并行事项。");
+            } else if (avg > THRESHOLDS.healthy) {
+                teamTips.push("团队整体接近饱和，建议建立轮值机制分担救火任务。");
+            } else {
+                teamTips.push("团队负荷总体可控，可预留精力做流程优化和能力建设。");
+            }
+
+            const mismatchCount = results.filter((x) => x.result.cfc > 1.0).length;
+            if (mismatchCount > 0) {
+                teamTips.push(`有 ${mismatchCount} 位成员存在能力与任务错配，可考虑角色微调。`);
+            }
+
+            dom.teamAdvice.innerHTML = teamTips.map((t) => `<li>${t}</li>`).join("");
+            renderMemberGrid(results);
+        }
+
+        function renderMemberGrid(results) {
+            dom.memberGrid.innerHTML = results.map(({ member, result }) => {
+                const activeClass = member.id === state.activeMemberId ? "active" : "";
+                const pillClass = result.status.level === "ok" ? "pill-ok" : result.status.level === "warn" ? "pill-warn" : "pill-danger";
+                const statusLabel = result.status.level === "ok" ? "健康" : result.status.level === "warn" ? "饱和" : "超负荷";
+
+                return `
+                    <div class="member-card ${activeClass}" data-member-id="${member.id}">
+                        <h4>${member.name}</h4>
+                        <p class="subtle">能力：${capabilityText[member.capability]}</p>
+                        <p class="subtle">任务：${taskText[member.task]}</p>
+                        <p><strong>Final TWI：</strong>${toFixedSafe(result.finalTWI, 2)}</p>
+                        <span class="pill ${pillClass}">${statusLabel}</span>
+                    </div>
+                `;
+            }).join("");
+
+            document.querySelectorAll(".member-card").forEach((el) => {
+                el.addEventListener("click", () => {
+                    const id = el.getAttribute("data-member-id");
+                    if (id) {
+                        state.activeMemberId = id;
+                        renderAll();
+                    }
+                });
+            });
+        }
+
+        function renderHistory(member) {
+            if (!member.history.length) {
+                dom.historyList.innerHTML = "<li>暂无快照，点击“保存快照”记录当前状态。</li>";
+                return;
+            }
+
+            dom.historyList.innerHTML = member.history
+                .slice(-8)
+                .reverse()
+                .map((h) => `<li>${h.time} | Final TWI: ${toFixedSafe(h.finalTWI, 2)} | CFC: ${toFixedSafe(h.cfc, 1)}</li>`)
+                .join("");
+        }
+
+        function updateRadarChart(member) {
+            if (!state.hasChart) {
+                dom.chartFallback.style.display = "block";
+                return;
+            }
+
+            dom.chartFallback.style.display = "none";
+            const ctx = document.getElementById("radarChart").getContext("2d");
+            const data = METRICS.map((m) => clampNumber(member.metrics[m.key], m.defaultValue));
+
+            if (!state.chart) {
+                state.chart = new Chart(ctx, {
+                    type: "radar",
+                    data: {
+                        labels: METRICS.map((m) => m.label),
+                        datasets: [
+                            {
+                                label: "当前维度压力值（1-10）",
+                                data,
+                                backgroundColor: "rgba(15, 118, 110, 0.2)",
+                                borderColor: "rgba(15, 118, 110, 1)",
+                                pointBackgroundColor: "rgba(13, 148, 136, 1)",
+                                borderWidth: 2
+                            }
+                        ]
+                    },
+                    options: {
+                        animation: { duration: 250 },
+                        scales: {
+                            r: {
+                                min: 0,
+                                max: 10,
+                                ticks: { stepSize: 2 }
+                            }
+                        },
+                        plugins: {
+                            legend: { position: "bottom" }
+                        }
+                    }
+                });
+                return;
+            }
+
+            state.chart.data.datasets[0].data = data;
+            state.chart.update();
+        }
+
+        function onFormChange() {
+            const member = getActiveMember();
+            if (!member) return;
+
+            member.name = dom.memberName.value.trim() || member.name;
+            member.capability = dom.capability.value;
+            member.task = dom.task.value;
+
+            METRICS.forEach((m) => {
+                const input = document.getElementById(m.key);
+                const v = clampNumber(input.value, m.defaultValue);
+                member.metrics[m.key] = v;
+                document.getElementById(`val-${m.key}`).innerText = String(v);
+            });
+
+            renderAll();
+        }
+
+        function renderAll() {
+            renderMemberSelect();
+            renderForm();
+            renderCurrentResult();
+            renderTeam();
+        }
+
+        function addMember() {
+            const idx = state.members.length + 1;
+            const newMember = createMember(`成员${idx}`);
+            state.members.push(newMember);
+            state.activeMemberId = newMember.id;
+            renderAll();
+        }
+
+        function removeActiveMember() {
+            if (state.members.length <= 1) {
+                alert("至少保留一名成员。");
+                return;
+            }
+            state.members = state.members.filter((m) => m.id !== state.activeMemberId);
+            state.activeMemberId = state.members[0].id;
+            renderAll();
+        }
+
+        function resetActiveMember() {
+            const member = getActiveMember();
+            if (!member) return;
+            member.capability = "general";
+            member.task = "general";
+            member.metrics = createDefaultMetrics();
+            renderAll();
+        }
+
+        function saveSnapshot() {
+            const member = getActiveMember();
+            if (!member) return;
+            const r = computeMemberResult(member);
+            const now = new Date();
+            const time = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")} ${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+            member.history.push({ time, finalTWI: r.finalTWI, cfc: r.cfc });
+            renderAll();
+        }
+
+        function exportData() {
+            const payload = {
+                exportedAt: new Date().toISOString(),
+                members: state.members.map((m) => ({
+                    id: m.id,
+                    name: m.name,
+                    capability: m.capability,
+                    task: m.task,
+                    metrics: m.metrics,
+                    history: m.history,
+                    result: computeMemberResult(m)
+                }))
+            };
+            const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.download = "team-workload-export.json";
+            link.click();
+            URL.revokeObjectURL(link.href);
+        }
+
+        function bindEvents() {
+            dom.memberSelect.addEventListener("change", (e) => {
+                state.activeMemberId = e.target.value;
+                renderAll();
+            });
+            dom.memberName.addEventListener("input", onFormChange);
+            dom.capability.addEventListener("change", onFormChange);
+            dom.task.addEventListener("change", onFormChange);
+
+            document.getElementById("btn-add").addEventListener("click", addMember);
+            document.getElementById("btn-remove").addEventListener("click", removeActiveMember);
+            document.getElementById("btn-reset").addEventListener("click", resetActiveMember);
+            document.getElementById("btn-snapshot").addEventListener("click", saveSnapshot);
+            document.getElementById("btn-export").addEventListener("click", exportData);
+        }
+
+        function init() {
+            buildSliderUi();
+            bindEvents();
+            const first = createMember("成员1");
+            state.members.push(first);
+            state.activeMemberId = first.id;
+            renderAll();
+        }
+
+        init();
+    </script>
+</body>
+</html>
