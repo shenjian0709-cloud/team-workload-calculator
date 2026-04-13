@@ -1,11 +1,9 @@
 services:
-  web:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    image: team-workload-app:1.0.0
-    container_name: team-workload-app
+  app:
+    build: .
+    image: team-workload:v1.2
     ports:
-      - "8080:80"
-    restart: unless-stopped
-
+      - "8080:3000"
+    volumes:
+      - ./data:/app/data  # 持久化数据库文件
+    restart: always

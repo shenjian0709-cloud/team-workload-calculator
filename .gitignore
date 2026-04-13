@@ -22,3 +22,11 @@ build/
 tmp/
 temp/
 
+# Dependencies
+node_modules/
+
+# Local data
+data/*.db
+
+# Local backups
+*.bak

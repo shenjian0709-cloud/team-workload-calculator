@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>团队动态负荷评估系统 V2</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root {
+      --bg: linear-gradient(135deg, #edf6f5, #fff8ef);
+      --card: #ffffff;
+      --text: #1f2937;
+      --muted: #64748b;
+      --line: #e2e8f0;
+      --teal: #0f766e;
+      --amber: #d97706;
+      --red: #dc2626;
+      --green: #16a34a;
+      --shadow: 0 12px 28px rgba(15, 23, 42, 0.08);
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Noto Sans SC", "Microsoft YaHei", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    .shell {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      color: #134e4a;
+      letter-spacing: 0.02em;
+    }
+
+    .lead {
+      margin: 0 0 20px;
+      color: var(--muted);
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(320px, 420px) 1fr;
+      gap: 18px;
+    }
+
+    .card {
+      background: var(--card);
+      border-radius: 16px;
+      box-shadow: var(--shadow);
+      padding: 18px;
+      margin-bottom: 18px;
+    }
+
+    .card h2,
+    .card h3 {
+      margin-top: 0;
+      margin-bottom: 12px;
+    }
+
+    .kpi-grid,
+    .chart-grid,
+    .member-grid {
+      display: grid;
+      gap: 14px;
+    }
+
+    .kpi-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .chart-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .member-grid {
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    }
+
+    .kpi {
+      background: linear-gradient(135deg, #f8fafc, #fefce8);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 16px;
+    }
+
+    .kpi-label {
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+
+    .kpi-value {
+      margin-top: 6px;
+      font-size: 1.8rem;
+      font-weight: 700;
+    }
+
+    .form-group {
+      margin-bottom: 14px;
+    }
+
+    label {
+      display: block;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+
+    input[type="text"],
+    select,
+    button,
+    input[type="range"] {
+      width: 100%;
+    }
+
+    input[type="text"],
+    select {
+      padding: 10px 12px;
+      border: 1px solid #cbd5e1;
+      border-radius: 10px;
+      font-size: 0.95rem;
+      background: #fff;
+    }
+
+    button {
+      border: none;
+      border-radius: 10px;
+      padding: 11px 12px;
+      font-size: 0.95rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #0f766e, #14b8a6);
+      color: #fff;
+    }
+
+    .btn-secondary {
+      background: #e2e8f0;
+      color: #0f172a;
+    }
+
+    .btn-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .metric {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 12px;
+      background: #f8fafc;
+      margin-bottom: 12px;
+    }
+
+    .metric-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .metric-value {
+      font-weight: 800;
+      color: var(--teal);
+    }
+
+    .metric-help {
+      margin: 8px 0 0;
+      color: var(--muted);
+      font-size: 0.85rem;
+      line-height: 1.45;
+    }
+
+    .result-panel {
+      border-radius: 14px;
+      padding: 16px;
+      color: #fff;
+      background: var(--green);
+    }
+
+    .result-panel .big {
+      font-size: 2.6rem;
+      font-weight: 800;
+      margin: 6px 0;
+    }
+
+    .subtle {
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .member-card {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 14px;
+      background: #fff;
+      cursor: pointer;
+    }
+
+    .member-card.active {
+      border-color: #14b8a6;
+      box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.15);
+    }
+
+    .member-card h4 {
+      margin: 0 0 8px;
+    }
+
+    .pill {
+      display: inline-block;
+      border-radius: 999px;
+      color: #fff;
+      font-size: 0.78rem;
+      padding: 4px 8px;
+      font-weight: 700;
+    }
+
+    .ok { background: var(--green); }
+    .warn { background: var(--amber); }
+    .danger { background: var(--red); }
+
+    .tips {
+      margin: 10px 0 0;
+      padding-left: 18px;
+      line-height: 1.5;
+    }
+
+    canvas { max-width: 100%; }
+
+    @media (max-width: 1000px) {
+      .layout,
+      .chart-grid,
+      .kpi-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .shell { padding: 14px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <h1>团队动态负荷评估系统</h1>
+    <p class="lead">V2 保留团队 Dashboard，同时恢复成员新增、滑块调节和维度说明，方便在测试环境直接操作与观察。</p>
+
+    <div class="layout">
+      <section>
+        <div class="card">
+          <h2>成员编辑区</h2>
+          <p class="subtle">先选中成员再调整参数，新增成员后可立即保存到数据库。</p>
+
+          <div class="form-group">
+            <label for="memberSelect">当前成员</label>
+            <select id="memberSelect"></select>
+          </div>
+
+          <div class="btn-row">
+            <button id="addMemberBtn" class="btn-primary" type="button">添加人员</button>
+            <button id="saveMemberBtn" class="btn-secondary" type="button">保存当前成员</button>
+          </div>
+
+          <div class="form-group">
+            <label for="memberName">成员名称</label>
+            <input id="memberName" type="text" placeholder="请输入成员名称">
+          </div>
+
+          <div id="metricsContainer"></div>
+
+          <div class="result-panel" id="resultPanel">
+            <div>当前负荷评估</div>
+            <div class="big" id="currentWorkload">0.0</div>
+            <div id="currentStatus">状态：健康有余力</div>
+          </div>
+
+          <ul class="tips" id="memberTips"></ul>
+        </div>
+      </section>
+
+      <section>
+        <div class="card">
+          <h2>团队概览 Dashboard</h2>
+          <div class="kpi-grid">
+            <div class="kpi">
+              <div class="kpi-label">平均负荷</div>
+              <div id="avg" class="kpi-value">0.0</div>
+            </div>
+            <div class="kpi">
+              <div class="kpi-label">高负荷人数</div>
+              <div id="high" class="kpi-value">0</div>
+            </div>
+            <div class="kpi">
+              <div class="kpi-label">低负荷人数</div>
+              <div id="low" class="kpi-value">0</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>成员状态看板</h3>
+          <div id="memberGrid" class="member-grid"></div>
+        </div>
+
+        <div class="chart-grid">
+          <div class="card">
+            <h3>团队负荷趋势（按周）</h3>
+            <canvas id="lineChart"></canvas>
+          </div>
+          <div class="card">
+            <h3>当前成员负荷分布</h3>
+            <canvas id="barChart"></canvas>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <script>
+    const METRICS = [
+      { key: 'skill', label: '计划内产出', weight: 0.3, defaultValue: 7, help: '衡量既定目标交付压力。分值越高，说明本周明确交付任务越重。' },
+      { key: 'pm', label: '项目统筹与推进', weight: 0.2, defaultValue: 4, help: '衡量排期、资源协同和推进过程中的管理负担。' },
+      { key: 'comm', label: '沟通协调成本', weight: 0.2, defaultValue: 5, help: '衡量跨部门对齐、会议和反复确认带来的消耗。' },
+      { key: 'incident', label: '突发与救火', weight: 0.5, defaultValue: 2, help: '衡量临时问题、线上异常和紧急响应造成的额外冲击。' },
+      { key: 'change', label: '需求变更频度', weight: 0.3, defaultValue: 3, help: '衡量需求频繁改动对工作稳定性的影响。' },
+      { key: 'oncall', label: '值班与支持', weight: 0.7, defaultValue: 1, help: '衡量值班、答疑和支持性工作带来的持续牵引。' },
+      { key: 'project', label: '项目复杂度', weight: 0.1, defaultValue: 6, help: '衡量技术、流程和依赖关系复杂度。' }
+    ];
+
+    const THRESHOLDS = {
+      idle: 4,
+      healthy: 6,
+      medium: 7.5,
+      high: 8.5
+    };
+
+    const state = {
+      members: [],
+      activeId: null,
+      barChart: null,
+      lineChart: null
+    };
+
+    function clamp(value) {
+      const parsed = Number(value);
+      if (!Number.isFinite(parsed)) return 0;
+      return Math.max(0, Math.min(10, Math.round(parsed)));
+    }
+
+    function createDraftMember() {
+      const draft = { id: null, name: `新成员${state.members.length + 1}` };
+      METRICS.forEach((metric) => {
+        draft[metric.key] = metric.defaultValue;
+      });
+      return draft;
+    }
+
+    function calcWorkload(member) {
+      return METRICS.reduce((sum, metric) => sum + clamp(member[metric.key]) * metric.weight, 0);
+    }
+
+    function getStatus(workload) {
+      if (workload < THRESHOLDS.idle) {
+        return { text: '状态：极度空闲', shortText: '极度空闲', className: 'ok', color: '#0ea5e9' };
+      }
+      if (workload < THRESHOLDS.healthy) {
+        return { text: '状态：健康有余力', shortText: '健康有余力', className: 'ok', color: '#16a34a' };
+      }
+      if (workload < THRESHOLDS.medium) {
+        return { text: '状态：中等负荷', shortText: '中等负荷', className: 'warn', color: '#eab308' };
+      }
+      if (workload < THRESHOLDS.high) {
+        return { text: '状态：较高负荷', shortText: '较高负荷', className: 'warn', color: '#f97316' };
+      }
+      return { text: '状态：负荷满载', shortText: '负荷满载', className: 'danger', color: '#dc2626' };
+    }
+
+    function getActiveMember() {
+      return state.members.find((member) => String(member.id) === String(state.activeId)) || null;
+    }
+
+    function getWeekKey() {
+      const now = new Date();
+      const start = new Date(now.getFullYear(), 0, 1);
+      const days = Math.floor((now - start) / 86400000);
+      const week = Math.ceil((days + start.getDay() + 1) / 7);
+      return `${now.getFullYear()}-W${String(week).padStart(2, '0')}`;
+    }
+
+    function saveTrend(avg) {
+      const trend = JSON.parse(localStorage.getItem('trend') || '{}');
+      trend[getWeekKey()] = Number(avg);
+      localStorage.setItem('trend', JSON.stringify(trend));
+    }
+
+    function renderTrend() {
+      const trend = JSON.parse(localStorage.getItem('trend') || '{}');
+      const labels = Object.keys(trend);
+      const data = Object.values(trend);
+
+      if (state.lineChart) {
+        state.lineChart.data.labels = labels;
+        state.lineChart.data.datasets[0].data = data;
+        state.lineChart.update();
+        return;
+      }
+
+      state.lineChart = new Chart(document.getElementById('lineChart'), {
+        type: 'line',
+        data: {
+          labels,
+          datasets: [{
+            label: '团队平均负荷',
+            data,
+            borderColor: '#0f766e',
+            backgroundColor: 'rgba(15, 118, 110, 0.18)',
+            fill: true,
+            tension: 0.3
+          }]
+        },
+        options: {
+          plugins: { legend: { position: 'bottom' } }
+        }
+      });
+    }
+
+    function renderBarChart(labels, values) {
+      if (state.barChart) {
+        state.barChart.data.labels = labels;
+        state.barChart.data.datasets[0].data = values;
+        state.barChart.update();
+        return;
+      }
+
+      state.barChart = new Chart(document.getElementById('barChart'), {
+        type: 'bar',
+        data: {
+          labels,
+          datasets: [{
+            label: '成员负荷值',
+            data: values,
+            backgroundColor: ['#0f766e', '#14b8a6', '#f59e0b', '#f97316', '#ef4444', '#0284c7']
+          }]
+        },
+        options: {
+          plugins: { legend: { display: false } }
+        }
+      });
+    }
+
+    function buildMetricInputs() {
+      const container = document.getElementById('metricsContainer');
+      container.innerHTML = METRICS.map((metric) => `
+        <div class="metric">
+          <div class="metric-head">
+            <label for="${metric.key}">${metric.label}</label>
+            <span class="metric-value" id="${metric.key}Value">0</span>
+          </div>
+          <input type="range" id="${metric.key}" min="0" max="10" step="1" aria-label="${metric.label}">
+          <p class="metric-help">${metric.help}</p>
+        </div>
+      `).join('');
+
+      METRICS.forEach((metric) => {
+        document.getElementById(metric.key).addEventListener('input', syncFormToDraft);
+      });
+    }
+
+    function renderMemberSelect() {
+      const select = document.getElementById('memberSelect');
+      select.innerHTML = state.members.map((member) => `
+        <option value="${member.id}">${member.name}</option>
+      `).join('');
+      select.value = state.activeId;
+    }
+
+    function renderEditor() {
+      const member = getActiveMember();
+      if (!member) return;
+
+      document.getElementById('memberName').value = member.name || '';
+      METRICS.forEach((metric) => {
+        const value = clamp(member[metric.key]);
+        document.getElementById(metric.key).value = value;
+        document.getElementById(`${metric.key}Value`).innerText = value;
+      });
+
+      const workload = calcWorkload(member);
+      const status = getStatus(workload);
+      document.getElementById('currentWorkload').innerText = workload.toFixed(1);
+      document.getElementById('currentStatus').innerText = status.text;
+      document.getElementById('resultPanel').style.background = status.color;
+      renderMemberTips(member, workload);
+    }
+
+    function renderMemberTips(member, workload) {
+      const topMetric = METRICS
+        .map((metric) => ({ ...metric, value: clamp(member[metric.key]) }))
+        .sort((a, b) => b.value - a.value)[0];
+
+      const tips = [];
+      if (workload >= THRESHOLDS.high) {
+        tips.push('当前已接近上限，建议立即做任务收敛和资源重分配。');
+      } else if (workload >= THRESHOLDS.medium) {
+        tips.push('当前负荷偏高，建议优先保证关键事项，减少临时插入工作。');
+      } else if (workload >= THRESHOLDS.healthy) {
+        tips.push('当前处于中等负荷区，可以继续推进，但需要关注波动上升。');
+      } else if (workload < THRESHOLDS.idle) {
+        tips.push('当前明显偏空闲，可以补充优化类、预研类或支援性任务。');
+      } else {
+        tips.push('当前仍有健康余量，可以承接少量增量任务并保留缓冲。');
+      }
+
+      if (topMetric && topMetric.value >= 7) {
+        tips.push(`当前最主要的压力来源是“${topMetric.label}”，优先针对这一项做减压最有效。`);
+      }
+
+      document.getElementById('memberTips').innerHTML = tips.map((tip) => `<li>${tip}</li>`).join('');
+    }
+
+    function renderMemberGrid() {
+      const grid = document.getElementById('memberGrid');
+      grid.innerHTML = state.members.map((member) => {
+        const workload = calcWorkload(member);
+        const status = getStatus(workload);
+        const activeClass = String(member.id) === String(state.activeId) ? 'active' : '';
+        return `
+          <div class="member-card ${activeClass}" data-id="${member.id}">
+            <h4>${member.name}</h4>
+            <div class="subtle">当前负荷值：${workload.toFixed(1)}</div>
+            <div style="margin-top:8px;"><span class="pill ${status.className}">${status.shortText}</span></div>
+          </div>
+        `;
+      }).join('');
+
+      document.querySelectorAll('.member-card').forEach((card) => {
+        card.addEventListener('click', () => {
+          state.activeId = card.dataset.id;
+          renderAll();
+        });
+      });
+    }
+
+    function renderDashboard() {
+      let total = 0;
+      let high = 0;
+      let low = 0;
+      const labels = [];
+      const values = [];
+
+      state.members.forEach((member) => {
+        const workload = calcWorkload(member);
+        total += workload;
+        labels.push(member.name);
+        values.push(Number(workload.toFixed(1)));
+
+        if (workload >= THRESHOLDS.high) high += 1;
+        if (workload < THRESHOLDS.idle) low += 1;
+      });
+
+      const avg = state.members.length ? (total / state.members.length).toFixed(1) : '0.0';
+      document.getElementById('avg').innerText = avg;
+      document.getElementById('high').innerText = high;
+      document.getElementById('low').innerText = low;
+
+      saveTrend(avg);
+      renderTrend();
+      renderBarChart(labels, values);
+    }
+
+    function renderAll() {
+      renderMemberSelect();
+      renderEditor();
+      renderMemberGrid();
+      renderDashboard();
+    }
+
+    function syncFormToDraft() {
+      const member = getActiveMember();
+      if (!member) return;
+
+      member.name = document.getElementById('memberName').value.trim() || member.name;
+      METRICS.forEach((metric) => {
+        const value = clamp(document.getElementById(metric.key).value);
+        member[metric.key] = value;
+        document.getElementById(`${metric.key}Value`).innerText = value;
+      });
+      renderEditor();
+      renderMemberGrid();
+      renderDashboard();
+    }
+
+    async function loadMembers() {
+      const response = await fetch('/api/members');
+      const data = await response.json();
+      state.members = Array.isArray(data) && data.length ? data : [createDraftMember()];
+      state.activeId = state.members[0].id;
+      renderAll();
+    }
+
+    async function addMember() {
+      const draft = createDraftMember();
+      const response = await fetch('/api/members', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(draft)
+      });
+
+      if (!response.ok) {
+        alert('添加成员失败，请检查后端服务。');
+        return;
+      }
+
+      const created = await response.json();
+      state.members.push(created);
+      state.activeId = created.id;
+      renderAll();
+    }
+
+    async function saveMember() {
+      const member = getActiveMember();
+      if (!member || !member.id) return;
+
+      member.name = document.getElementById('memberName').value.trim() || member.name;
+      const response = await fetch(`/api/members/${member.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(member)
+      });
+
+      if (!response.ok) {
+        alert('保存失败，请稍后重试。');
+        return;
+      }
+
+      const saved = await response.json();
+      const index = state.members.findIndex((item) => String(item.id) === String(saved.id));
+      if (index >= 0) {
+        state.members[index] = saved;
+        state.activeId = saved.id;
+      }
+      renderAll();
+    }
+
+    function bindEvents() {
+      document.getElementById('memberSelect').addEventListener('change', (event) => {
+        state.activeId = event.target.value;
+        renderAll();
+      });
+
+      document.getElementById('memberName').addEventListener('input', syncFormToDraft);
+      document.getElementById('addMemberBtn').addEventListener('click', addMember);
+      document.getElementById('saveMemberBtn').addEventListener('click', saveMember);
+    }
+
+    buildMetricInputs();
+    bindEvents();
+    loadMembers();
+  </script>
+</body>
+</html>
