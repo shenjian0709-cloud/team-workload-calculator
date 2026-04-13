@@ -11,6 +11,7 @@ All notable changes to this project will be documented in this file.
 - Reintroduced slider-based workload controls and inline metric guidance
 - Adjusted workload status thresholds to the new five-level model
 - Updated app startup to use the fixed V2 server entry
+- Removed legacy entry files and outdated V1 artifacts from the workspace
 
 ## [1.0.0] - 2026-04-10
 
