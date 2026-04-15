@@ -524,10 +524,10 @@
 
     METRICS.length = 0;
     METRICS.push(
-      { key: 'skill', label: '计划内产出', weight: 0.35, weightText: '35%', defaultValue: 7, help: '既定目标交付压力，越高说明计划内任务越重。' },
-      { key: 'pm', label: '项目统筹与推进', weight: 0.25, weightText: '25%', defaultValue: 4, help: '排期、资源协调与推进动作带来的组织负担。' },
-      { key: 'comm', label: '沟通协调成本', weight: 0.1, weightText: '10%', defaultValue: 5, help: '会议、对齐、跨团队沟通带来的时间消耗。' },
-      { key: 'incident', label: '突发与救火', weight: 0.2, weightText: '20%', defaultValue: 2, help: '线上异常、临时问题与紧急支援的冲击。' },
+      { key: 'skill', label: '计划内产出', weight: 0.30, weightText: '30%', defaultValue: 7, help: '既定目标交付压力，越高说明计划内任务越重。' },
+      { key: 'pm', label: '项目统筹与推进', weight: 0.3, weightText: '30%', defaultValue: 4, help: '排期、资源协调与推进动作带来的组织负担。' },
+      { key: 'comm', label: '沟通协调成本', weight: 0.15, weightText: '15%', defaultValue: 5, help: '会议、对齐、跨团队沟通带来的时间消耗。' },
+      { key: 'incident', label: '突发与救火', weight: 0.15, weightText: '15%', defaultValue: 2, help: '线上异常、临时问题与紧急支援的冲击。' },
       { key: 'change', label: '需求变更频度', weight: 0.1, weightText: '10%', defaultValue: 3, help: '频繁改动对稳定交付节奏造成的扰动。' }
     );
 
@@ -549,7 +549,7 @@
 
     const CFC_MATRIX = {
       tech_specialist: {
-        deep_technical: { value: 0.85, label: '高度契合' },
+        deep_technical: { value: 0.9, label: '高度契合' },
         multi_system_integration: { value: 1.1, label: '轻度逆风' },
         project_delivery: { value: 1.25, label: '明显错配' },
         high_comms: { value: 1.4, label: '严重错配' },
@@ -557,8 +557,8 @@
       },
       project_delivery: {
         deep_technical: { value: 1.3, label: '明显错配' },
-        multi_system_integration: { value: 0.9, label: '较为契合' },
-        project_delivery: { value: 0.85, label: '高度契合' },
+        multi_system_integration: { value: 0.95, label: '较为契合' },
+        project_delivery: { value: 0.9, label: '高度契合' },
         high_comms: { value: 1.0, label: '正常匹配' },
         routine_support: { value: 1.0, label: '正常匹配' }
       },
@@ -566,7 +566,7 @@
         deep_technical: { value: 1.4, label: '严重错配' },
         multi_system_integration: { value: 1.15, label: '轻度逆风' },
         project_delivery: { value: 0.95, label: '较为契合' },
-        high_comms: { value: 0.85, label: '高度契合' },
+        high_comms: { value: 0.9, label: '高度契合' },
         routine_support: { value: 1.0, label: '正常匹配' }
       },
       tech_generalist_junior: {
@@ -578,10 +578,10 @@
       },
       tech_generalist_advanced: {
         deep_technical: { value: 0.95, label: '较为契合' },
-        multi_system_integration: { value: 0.85, label: '高度契合' },
+        multi_system_integration: { value: 0.9, label: '高度契合' },
         project_delivery: { value: 0.95, label: '较为契合' },
         high_comms: { value: 1.05, label: '轻度逆风' },
-        routine_support: { value: 0.9, label: '较为契合' }
+        routine_support: { value: 0.95, label: '较为契合' }
       }
     };
 
