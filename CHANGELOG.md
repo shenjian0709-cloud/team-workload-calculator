@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.3.0] - 2026-04-16
+
+### Changed
+
+- Replaced the legacy slider scoring flow with the V3 ITIL operations plus project workload model
+- Expanded member records and API payloads to include `inc_count`, `req_count`, `chg_count`, `prb_count`, `active_projects`, and `planner_tasks`
+- Added schema compatibility logic to backfill missing columns and normalize legacy `SYSTEM OPERATION` group values to `INFR`
+- Introduced capability and work-pattern matching in the V3 editor and recalculated total load as `(Ops Score x ContextFactor + Project Score) x CFC`
+- Tuned workload weights and matching factors for the new task-based assessment model
+- Fixed remaining V3 page text corruption issues by moving the frontend logic into `public/app.v3.js` and restoring user-visible Chinese copy
+- Kept the active application entrypoints on `public/index.v3.html` and `server.v2fixed.js`
+
 ## [1.2.0] - 2026-04-13
 
 ### Changed
