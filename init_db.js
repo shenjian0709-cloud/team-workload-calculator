@@ -13,19 +13,18 @@ db.serialize(() => {
     team_group TEXT DEFAULT 'INFR',
     capability_type TEXT DEFAULT 'tech_generalist_advanced',
     work_pattern TEXT DEFAULT 'routine_support',
-    skill INTEGER,
-    pm INTEGER,
-    comm INTEGER,
-    incident INTEGER,
-    change INTEGER,
-    oncall INTEGER,
-    project INTEGER
+    inc_count INTEGER DEFAULT 0,
+    req_count INTEGER DEFAULT 0,
+    chg_count INTEGER DEFAULT 0,
+    prb_count INTEGER DEFAULT 0,
+    active_projects INTEGER DEFAULT 0,
+    planner_tasks INTEGER DEFAULT 0
   )`);
 
   // 插入初始演示数据
-  const stmt = db.prepare("INSERT INTO members (name, team_group, capability_type, work_pattern, skill, pm, comm, incident, change, oncall, project) VALUES (?,?,?,?,?,?,?,?,?,?,?)");
-  stmt.run("T1", "INFR", "tech_specialist", "deep_technical", 8, 4, 3, 2, 1, 2, 7);
-  stmt.run("T2", "APP", "project_delivery", "project_delivery", 6, 3, 8, 5, 4, 0, 4);
+  const stmt = db.prepare("INSERT INTO members (name, team_group, capability_type, work_pattern, inc_count, req_count, chg_count, prb_count, active_projects, planner_tasks) VALUES (?,?,?,?,?,?,?,?,?,?)");
+  stmt.run("T1", "INFR", "tech_specialist", "deep_technical", 5, 4, 2, 2, 1, 3);
+  stmt.run("T2", "APP", "project_delivery", "project_delivery", 2, 8, 3, 1, 2, 6);
   stmt.finalize();
 
   console.log("Database initialized successfully at ./data/team.db");
