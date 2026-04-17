@@ -21,6 +21,7 @@ dist/
 build/
 tmp/
 temp/
+tmp.index.v3.inline.js
 
 # Dependencies
 node_modules/
