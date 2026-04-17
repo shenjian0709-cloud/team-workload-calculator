@@ -1,4 +1,4 @@
-FROM node:22-alpine
+FROM node:20-bookworm-slim
 
 WORKDIR /app
 
@@ -7,7 +7,7 @@ ENV PORT=3000
 ENV DB_PATH=/app/data/team.db
 
 COPY package*.json ./
-RUN npm ci --omit=dev && npm cache clean --force
+RUN npm install --omit=dev && npm cache clean --force
 
 COPY . .
 
