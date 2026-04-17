@@ -3,8 +3,9 @@ const path = require('path');
 const sqlite3 = require('sqlite3').verbose();
 
 const app = express();
-const port = 3000;
-const db = new sqlite3.Database('./data/team.db');
+const port = Number(process.env.PORT) || 3000;
+const dbPath = process.env.DB_PATH || './data/team.db';
+const db = new sqlite3.Database(dbPath);
 
 app.use(express.json());
 

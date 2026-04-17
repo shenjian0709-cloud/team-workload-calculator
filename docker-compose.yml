@@ -1,9 +1,22 @@
 services:
   app:
-    build: .
-    image: team-workload:v1.2
+    container_name: team-workload-app
+    build:
+      context: .
+    image: team-workload:v1.3
     ports:
       - "8080:3000"
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      DB_PATH: /app/data/team.db
+      TZ: Asia/Shanghai
     volumes:
-      - ./data:/app/data  # 持久化数据库文件
-    restart: always
+      - ./data:/app/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3000/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s

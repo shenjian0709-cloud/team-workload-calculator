@@ -8,6 +8,7 @@
   },
   "scripts": {
     "init-db": "node init_db.js",
-    "start": "node server.v2fixed.js"
+    "start": "node server.v2fixed.js",
+    "docker:start": "node init_db.js && node server.v2fixed.js"
   }
 }

@@ -1,0 +1,11 @@
+.git
+.gitignore
+node_modules
+data
+tmp
+temp
+dist
+build
+*.log
+*.bak
+tmp.index.v3.inline.js

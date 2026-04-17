@@ -2,14 +2,17 @@ FROM node:22-alpine
 
 WORKDIR /app
 
+ENV NODE_ENV=production
+ENV PORT=3000
+ENV DB_PATH=/app/data/team.db
+
 COPY package*.json ./
-RUN npm install
+RUN npm ci --omit=dev && npm cache clean --force
 
 COPY . .
 
-# 确保 data 目录存在并初始化数据库
-RUN mkdir -p data && node init_db.js
+RUN mkdir -p /app/data
 
 EXPOSE 3000
 
-CMD ["node", "server.v2fixed.js"]
+CMD ["npm", "run", "docker:start"]
