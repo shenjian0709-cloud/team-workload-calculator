@@ -421,7 +421,7 @@
     }
 
     .kpi-grid {
-      grid-template-columns: repeat(4, minmax(0, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
     }
 
     .chart-grid {
@@ -457,6 +457,27 @@
     .history-kpi {
       padding: 12px;
       background: #fff;
+    }
+
+    .insight-box {
+      border: 1px solid rgba(15, 118, 110, 0.14);
+      border-radius: 14px;
+      background: linear-gradient(135deg, #f8fffd, #fffdf7);
+      padding: 14px;
+      margin-bottom: 12px;
+    }
+
+    .insight-title {
+      font-size: 0.82rem;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+
+    .insight-value {
+      font-size: 1rem;
+      font-weight: 800;
+      color: #134e4a;
+      line-height: 1.5;
     }
 
     .kpi-title,
@@ -496,6 +517,32 @@
     .member-card h4,
     .group-card h3 {
       margin: 0 0 8px;
+    }
+
+    .group-kpi-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: 10px;
+      margin: 12px 0;
+    }
+
+    .group-kpi {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: #fff;
+      padding: 10px 12px;
+    }
+
+    .group-kpi-label {
+      font-size: 0.78rem;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+
+    .group-kpi-value {
+      font-size: 1rem;
+      font-weight: 800;
+      color: #134e4a;
     }
 
     .pill-row {
@@ -720,6 +767,14 @@
                 <div class="member-summary-label">当前任务类型</div>
                 <div id="workPatternValue" class="member-summary-value">-</div>
               </div>
+              <div class="member-summary-item">
+                <div class="member-summary-label">角色基线</div>
+                <div id="roleBaselineValue" class="member-summary-value">-</div>
+              </div>
+              <div class="member-summary-item">
+                <div class="member-summary-label">当前偏离判断</div>
+                <div id="baselineFitValue" class="member-summary-value">-</div>
+              </div>
             </div>
           </div>
 
@@ -752,6 +807,14 @@
 
         <div class="card action-card">
           <h3>管理动作建议</h3>
+          <div class="insight-box">
+            <div class="insight-title">当前风险判断</div>
+            <div id="riskNarrative" class="insight-value">系统将根据趋势、任务结构、上下文打断和能力错配自动生成判断。</div>
+          </div>
+          <div class="insight-box">
+            <div class="insight-title">岗位基线说明</div>
+            <div id="roleBaselineHint" class="insight-value">系统将基于当前任务类型与能力画像推断该成员更合理的负荷基线。</div>
+          </div>
           <div id="riskBadges" class="risk-grid"></div>
           <ul id="actionSuggestions" class="action-list"></ul>
         </div>
@@ -773,12 +836,20 @@
           </div>
           <div class="kpi-grid">
             <div class="kpi">
+              <div class="kpi-title">总负荷</div>
+              <div id="totalLoad" class="kpi-value">0.0</div>
+            </div>
+            <div class="kpi">
               <div class="kpi-title">平均负荷</div>
               <div id="avg" class="kpi-value">0.0</div>
             </div>
             <div class="kpi">
               <div class="kpi-title">高负荷人数</div>
               <div id="fullLoadCount" class="kpi-value">0</div>
+            </div>
+            <div class="kpi">
+              <div class="kpi-title">持续高压人数</div>
+              <div id="sustainedHighCount" class="kpi-value">0</div>
             </div>
             <div class="kpi">
               <div class="kpi-title">极度空闲人数</div>
