@@ -11,5 +11,8 @@ build
 .env
 .env.*
 artifacts
+backups
+*.tar
+*.tar.gz
 test
 tmp.index.v3.inline.js
