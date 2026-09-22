@@ -2,7 +2,7 @@ services:
   app:
     container_name: team-workload-app
     image: team-workload:2.0.0
-    build: .
+    pull_policy: never
     ports:
       - "${APP_PORT:-8080}:3000"
     environment:

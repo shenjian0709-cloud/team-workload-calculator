@@ -1,133 +1,85 @@
-# 团队动态负荷评估系统
+# Team Capacity · 团队负荷管理 v2.0.0
 
-面向 IT 运维与项目管理场景的团队负荷评估工具，支持成员档案维护、周任务量录入、历史趋势查看、全员看板与按组容量分析。
+适合小型 IT 团队的周度负荷评估工具。支持 INFR / ADI / SMO / TO，提供成员管理、周度填报、容量预估和历史趋势。
 
-## 当前正式入口
+## 本版变化
 
-- 前端主页：`public/index.v3.html`
-- 前端脚本：`public/app.v3.new.js`
-- 后端入口：`server.v2fixed.js`
-- 数据库初始化：`init_db.js`
-
-## 运行环境
-
-- Node.js 22+
-- npm 10+
+- Planner 任务统一改为 **Task（独立任务）**。
+- 新增 / 修改 / 删除成员；删除采用可恢复归档，保留历史。
+- 旧团队成员迁移为“待分配”，原团队名称保留；历史快照保留原归属。
+- 以“成员 × ISO 周”保存数据，可补录或修改指定周；未填报与零任务明确区分。
+- 数据库统一提供趋势；连续高压必须连续日历周，不再使用浏览器 localStorage。
+- 加入可用工时、容量占用、负荷集中度和工作备注。
+- 桌面 / 移动端响应式界面；图表、字体、脚本无需外部 CDN。
+- 写入事务、版本冲突检测、生产访问密码、登录限流、安全响应头及输入校验。
+- SQLite 使用 Node 内置驱动，移除旧原生驱动依赖。生产镜像使用 Node 24，非 root 运行。
 
 ## 本地运行
 
-1. 安装依赖
+Node.js 22.13+（推荐 24）。Node 22 可能显示 SQLite experimental 提示。
 
 ```bash
-npm install
-```
-
-2. 初始化数据库
-
-```bash
-npm run init-db
-```
-
-3. 启动服务
-
-```bash
+npm ci
+npm test
 npm start
 ```
 
-4. 浏览器访问
+访问 http://localhost:3000 。首次启动自动创建空库，不注入演示成员。默认数据库 `./data/team.db`。
+
+开发模式未设置 `ADMIN_PASSWORD` 时无需登录；仅用于受控本机开发。生产模式强制要求至少 12 字符的密码。当前是共享管理密码，**尚未实现个人账号、分角色授权和操作者审计**。
+
+## Docker 部署及升级
+
+详见 **[部署、离线升级与回滚说明](docs/DEPLOYMENT.md)**，包括旧版 v1.3 数据迁移、Linux 数据目录权限、离线镜像打包、验收和回滚。
+
+新部署（Linux Docker 主机）：
+
+```bash
+cp .env.example .env
+# 编辑 .env，设置独立的 ADMIN_PASSWORD（至少 12 字符）
+mkdir -p data
+sudo chown -R 1000:1000 data
+docker compose up -d --build --wait
+```
+
+访问 `http://<server-ip>:8080`。启用 HTTPS 反向代理时设置 `COOKIE_SECURE=true`；纯 HTTP 内网部署保持 false。
+
+## 模型与数据口径
 
 ```text
-http://localhost:3000
+运维分 = INC×2 + REQ×1 + CHG×1.5 + PRB×2
+项目及 Task 分 = 活跃项目×5 + 独立 Task×2
+上下文系数 = 1 + max(0, 有任务的运维类型数−2)×0.05
+估算负荷 =（运维分×上下文系数 + 项目及 Task 分）×CFC
+可用容量 = 每周可用工时 / 40 × 40 基准分
+容量占用 = 估算负荷 / 可用容量 ×100%
 ```
 
-## Docker 部署
+1. CFC 保留原版能力 × 工作类型矩阵（0.9–1.4）；前后端共用 `public/model.js`。
+2. Task 仅录入**未包含在工单及活跃项目中的独立任务**，防止重复计量。
+3. 容量占用 <50% 为有余量；50–75% 适中；75–100% 较高；≥100% 超出容量。连续高压为连续至少两周 ≥75%。
+4. 零可用工时显示“不可用”；有任务但工时为零会单独警示。无填报记录不能推断为空闲。
+5. 小组余量为已填报成员 `max(0,容量−负荷)` 的合计；负荷集中度为最高个人负荷 / 小组负荷。两者都不能直接代表可接工单数或关键技能依赖。
+6. 未保存的编辑只影响预览，保存成功后才更新看板。并发修改会返回冲突，用户刷新后重录，不会静默覆盖。
+7. 周边界按 Asia/Shanghai 计算 ISO 周。趋势按快照当时的小组、原始分数聚合，并保留缺口。每个图表周标有填报人数。
+8. 当前看板的待填报名单按现有未归档成员计算；归档成员在有历史填报的周仍展示。此名单不是历史在岗人数统计。
+9. 旧快照标记模型 1.3 并保留原分数，工时缺失按 40h 基准展示。编辑保存时明确提示转为模型 2.0。
 
-项目已提供可直接使用的 `Dockerfile` 与 `docker-compose.yml`。
+**分数是经验估算，不是实际工时或个人绩效。** 当前没有任务复杂度、技能替代关系和工时系统集成；应结合实际耗时校准权重，避免跨岗位直接排名。
 
-### 方式 1：Docker Compose
+## 数据迁移与保留
 
-首次部署：
+启动自动执行幂等 schema v2 迁移。旧 `members` 及 `member_weekly_snapshots` 表不删除；`planner_tasks` 映射到新版周记录的 `task_count`。无合法周号的旧快照保留在旧表，不强行归入某周；成员表中未带日期的旧任务量也保留，不冒充本周填报。完整数据库备份是回滚依据，JSON 导出用于查阅 / 分析，不是自动恢复格式。
 
-```bash
-docker compose build --no-cache
-docker compose up -d
-```
+修改成员资料不会重写历史周；成员变更小组后，要修改某个已保存周的归属，应在该周填报中明确修改“当周小组”。
 
-查看状态：
+## 项目结构
 
-```bash
-docker compose ps
-docker compose logs -f app
-```
+- `server.js`：API、会话和服务生命周期。
+- `lib/database.js`：数据库迁移、事务队列和历史模型适配。
+- `public/model.js`：共用算法及 ISO 周函数。
+- `public/app.js` / `styles.css` / `index.html`：界面。
+- `test/`：计算、日历、API、迁移和并发回归测试。
+- `.github/workflows/ci.yml`：Node 22/24 测试、依赖审计、Docker 启动与重启检查。
 
-停止服务：
-
-```bash
-docker compose down
-```
-
-默认访问地址：
-
-```text
-http://<server-ip>:8080
-```
-
-### 方式 2：Docker CLI
-
-构建镜像：
-
-```bash
-docker build -t team-workload:v1.3 .
-```
-
-启动容器：
-
-```bash
-docker run -d \
-  --name team-workload-app \
-  -p 8080:3000 \
-  -e NODE_ENV=production \
-  -e PORT=3000 \
-  -e DB_PATH=/app/data/team.db \
-  -v $(pwd)/data:/app/data \
-  --restart unless-stopped \
-  team-workload:v1.3
-```
-
-## 数据持久化
-
-- SQLite 数据库路径：`/app/data/team.db`
-- Compose 已默认挂载宿主机 `./data` 到容器 `/app/data`
-- 容器重启后数据会保留
-
-## 发布与升级建议
-
-### 内网服务器直接拉代码部署
-
-```bash
-git pull origin main
-docker compose build --no-cache
-docker compose up -d
-```
-
-### 使用内部镜像仓库部署
-
-本地构建并推送：
-
-```bash
-docker build -t registry.company.local/team-workload:v1.3 .
-docker push registry.company.local/team-workload:v1.3
-```
-
-服务器更新 `docker-compose.yml` 中的 `image` 后执行：
-
-```bash
-docker compose pull
-docker compose up -d
-```
-
-## 注意事项
-
-- `init_db.js` 现在只会在空库时写入演示数据，不会在每次容器重启时重复灌数
-- 发布前建议备份 `data/team.db`
-- 如需改端口，可调整 `docker-compose.yml` 中 `8080:3000` 的左侧宿主机端口
+历史入口 `/index.v3.html` 和 `/index.v2fixed.html` 会重定向至新版主页。旧 API 写入路径被移除，客户端需使用新版周记录接口。

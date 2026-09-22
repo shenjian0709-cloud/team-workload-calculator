@@ -15,6 +15,7 @@ yarn-error.log*
 # Env
 .env
 .env.*
+!.env.example
 
 # Build cache / temp
 dist/
@@ -28,6 +29,8 @@ node_modules/
 
 # Local data
 data/*.db
+data/
+artifacts/
 
 # Local backups
 *.bak

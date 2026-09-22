@@ -2,6 +2,33 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.0.0] - 2026-09-22
+
+### Added
+
+- Member create/edit/archive/restore, four-team management (INFR / ADI / SMO / TO).
+- Explicit weekly records, available hours, capacity utilization, notes, validated ISO weeks and optimistic concurrency.
+- Database-backed 12-week trends, missing-report states and calendar-contiguous high-load alerts.
+- Shared-password production access, same-origin writes, security headers and login throttling.
+- Responsive interface with locally rendered charts; no runtime CDN dependencies.
+- Idempotent v1.3 migration preserving source data and historical model scores.
+- Node/API/migration tests and GitHub CI including Docker smoke checks.
+- Offline deployment package instructions, backup and rollback procedures.
+
+### Changed
+
+- Planner task quantity is now Task, limited to independent work to avoid project double-counting.
+- Context factor is 1 / 1.05 / 1.1 for up to 2 / 3 / 4 active operations categories.
+- Capacity scales with weekly availability; scores remain explicitly estimated, not actual hours.
+- Node built-in SQLite replaces sqlite3; production uses Node 24 with a non-root container and database health endpoint.
+- Removed legacy entrypoint files; old HTML URLs redirect to the new homepage.
+
+### Migration notes
+
+- Legacy teams become unassigned for manual reassignment; historical team snapshots remain unchanged.
+- Undated legacy member counts remain in the original table and are not assumed to belong to the current week.
+- Back up the entire database directory before upgrading. Production now requires ADMIN_PASSWORD (12+ characters).
+
 ## [1.3.0] - 2026-04-16
 
 ### Changed

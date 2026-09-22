@@ -8,4 +8,8 @@ dist
 build
 *.log
 *.bak
+.env
+.env.*
+artifacts
+test
 tmp.index.v3.inline.js

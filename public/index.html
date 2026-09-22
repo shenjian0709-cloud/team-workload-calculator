@@ -1,0 +1,302 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Team Capacity · 团队负荷管理</title>
+    <link rel="stylesheet" href="/styles.css" />
+    <script defer src="/model.js"></script>
+    <script defer src="/app.js"></script>
+  </head>
+  <body>
+    <section id="loginScreen" class="login-screen" hidden>
+      <form id="loginForm" class="login-card">
+        <div class="brand-mark">TC</div>
+        <p class="eyebrow">TEAM CAPACITY</p>
+        <h1>欢迎回来</h1>
+        <p class="muted">登录团队工作空间，查看负荷与容量。</p>
+        <label
+          >访问密码<input
+            id="password"
+            type="password"
+            autocomplete="current-password"
+            required /></label
+        ><button class="primary" type="submit">进入工作空间 →</button>
+        <p id="loginError" role="alert"></p>
+      </form>
+    </section>
+    <div id="workspace" hidden>
+      <aside class="sidebar">
+        <a class="brand" href="/"
+          ><span class="brand-mark">TC</span
+          ><span>Team Capacity<small>团队负荷管理</small></span></a
+        >
+        <p class="nav-label">工作空间</p>
+        <nav aria-label="主导航">
+          <button class="nav active" data-view="overview">
+            ◫ <span>团队概览</span></button
+          ><button class="nav" data-view="weekly">
+            ▤ <span>周度填报</span></button
+          ><button class="nav" data-view="members">
+            ♙ <span>成员管理</span>
+          </button>
+        </nav>
+        <div class="sidebar-note">
+          <span class="live-dot"></span> 让工作分配更有依据
+          <p>关注持续负荷，<br />为重要工作留出空间。</p>
+          <span class="version">VERSION 2.0.0</span>
+        </div>
+      </aside>
+      <main>
+        <header class="topbar">
+          <span>WORKSPACE <b>/</b> <span id="breadcrumb">团队概览</span></span>
+          <div class="top-actions">
+            <button id="exportBtn" class="text-button">导出数据 ↗</button
+            ><button id="logoutBtn" class="text-button">退出</button>
+          </div>
+        </header>
+        <div class="content">
+          <div class="page-heading">
+            <div>
+              <p class="eyebrow">PEOPLE · WORKLOAD · BALANCE</p>
+              <h1 id="pageTitle">掌握团队的工作节奏</h1>
+              <p id="pageDescription" class="muted">
+                从每周工作量出发，看见压力，也看见余量。
+              </p>
+            </div>
+            <button id="addMember" class="primary">＋ 新增成员</button>
+          </div>
+          <div
+            id="notice"
+            class="notice"
+            role="status"
+            aria-live="polite"
+            hidden
+          ></div>
+          <div class="toolbar">
+            <div class="week-control">
+              <button id="prevWeek" aria-label="上一周">←</button
+              ><label class="sr-only" for="week">统计周</label
+              ><input
+                id="week"
+                type="week"
+                min="2000-W01"
+                max="2100-W52"
+              /><button id="nextWeek" aria-label="下一周">→</button
+              ><button id="thisWeek" class="text-button">本周</button>
+            </div>
+            <div class="filters">
+              <label for="group">小组</label
+              ><select id="group">
+                <option value="ALL">全部小组</option>
+                <option>INFR</option>
+                <option>ADI</option>
+                <option>SMO</option>
+                <option>TO</option>
+                <option value="UNASSIGNED">待分配</option></select
+              ><button id="refresh" class="text-button">↻ 刷新</button>
+            </div>
+          </div>
+          <section id="overviewView">
+            <div id="kpis" class="kpi-grid"></div>
+            <div class="dashboard-grid">
+              <section class="panel">
+                <div class="panel-heading">
+                  <div>
+                    <p class="eyebrow">WEEKLY PULSE</p>
+                    <h2>团队负荷分布</h2>
+                  </div>
+                  <span class="subtle-tag">已保存数据</span>
+                </div>
+                <div class="table-wrap">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>成员 / 小组</th>
+                        <th>估算负荷</th>
+                        <th>容量占用</th>
+                        <th>状态</th>
+                        <th></th>
+                      </tr>
+                    </thead>
+                    <tbody id="loadRows"></tbody>
+                  </table>
+                </div>
+              </section>
+              <section class="panel insight-panel">
+                <p class="eyebrow">MANAGEMENT INSIGHTS</p>
+                <h2>本周关注</h2>
+                <div id="insights"></div>
+                <div class="model-note">
+                  容量占用 = 估算负荷 ÷ 可用容量。<br />40h 对应 40
+                  基准分；分数不代表实际耗时。
+                </div>
+              </section>
+            </div>
+            <section class="panel trend-panel">
+              <div class="panel-heading">
+                <div>
+                  <p class="eyebrow">12-WEEK HISTORY</p>
+                  <h2>过去 12 周 · 平均负荷</h2>
+                </div>
+                <span class="muted">按历史归属筛选 · 缺报不补零</span>
+              </div>
+              <div id="trend" class="trend" aria-label="12 周平均负荷图"></div>
+              <p class="muted small">
+                旧版快照保留原始分数；模型升级、填报人数变化会影响周间可比性。
+              </p>
+            </section>
+            <div class="section-title">
+              <h2>小组容量</h2>
+              <span class="muted">余量仅统计已填报成员</span>
+            </div>
+            <div id="groupCards" class="group-grid"></div>
+          </section>
+          <section id="weeklyView" hidden>
+            <div class="weekly-layout">
+              <section class="panel">
+                <div class="panel-heading">
+                  <div>
+                    <p class="eyebrow">WEEKLY CHECK-IN</p>
+                    <h2>记录本周工作</h2>
+                  </div>
+                  <span id="saveState" class="subtle-tag">未编辑</span>
+                </div>
+                <label>选择成员<select id="reportMember"></select></label>
+                <form id="reportForm">
+                  <div class="form-grid">
+                    <label
+                      >当周小组<select
+                        name="team_group"
+                        required
+                      ></select></label
+                    ><label
+                      >可用工时 / 小时<input
+                        name="available_hours"
+                        type="number"
+                        min="0"
+                        max="168"
+                        step="0.5"
+                        value="40"
+                        required /></label
+                    ><label
+                      >当周能力画像<select
+                        name="capability_type"
+                      ></select></label
+                    ><label
+                      >当周工作类型<select name="work_pattern"></select
+                    ></label>
+                  </div>
+                  <div class="divider"></div>
+                  <div id="taskFields" class="form-grid"></div>
+                  <p class="hint">
+                    Task
+                    仅填写未计入上述工单和活跃项目的独立任务，避免重复计量。各项数量均为当周承担量。
+                  </p>
+                  <label
+                    >工作备注<textarea
+                      name="note"
+                      rows="3"
+                      maxlength="1000"
+                      placeholder="记录重点项目、异常事件或容量变化原因…"
+                    ></textarea>
+                  </label>
+                  <div class="form-footer">
+                    <button type="button" id="discard">撤销修改</button
+                    ><button type="submit" class="primary" id="saveReport">
+                      保存本周填报
+                    </button>
+                  </div>
+                </form>
+              </section>
+              <div>
+                <section class="panel preview-panel">
+                  <p class="eyebrow">LIVE ESTIMATE</p>
+                  <h2>负荷预览</h2>
+                  <div id="preview"></div>
+                </section>
+                <section class="panel formula">
+                  <h3>透明的计算方式</h3>
+                  <p>（运维分 × 上下文系数 + 项目及 Task 分）× 人岗匹配系数</p>
+                  <p>
+                    INC × 2 · REQ × 1<br />CHG × 1.5 · PRB × 2<br />项目 × 5 ·
+                    Task × 2
+                  </p>
+                  <p>
+                    运维类型 ≤2 / 3 / 4 类时，上下文系数为 1 / 1.05 /
+                    1.1。人岗匹配系数保留原版矩阵。
+                  </p>
+                  <p>
+                    可用工时扣除休假等不可用时间。将会议等工作计入负荷时，不要再次从可用工时扣减。
+                  </p>
+                  <p>该模型用于识别分配趋势，需结合实际耗时持续校准。</p>
+                </section>
+              </div>
+            </div>
+            <section class="panel">
+              <h2>成员历史记录</h2>
+              <div id="memberHistory" class="table-wrap"></div>
+            </section>
+          </section>
+          <section id="membersView" hidden>
+            <section class="panel">
+              <div class="panel-heading">
+                <div>
+                  <h2>团队成员</h2>
+                  <p class="muted small">
+                    资料修改不重写历史；删除后归档，可随时恢复。
+                  </p>
+                </div>
+                <label class="checkbox"
+                  ><input type="checkbox" id="showArchived" />显示已归档</label
+                >
+              </div>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>成员</th>
+                      <th>所属小组</th>
+                      <th>能力画像</th>
+                      <th>默认工作类型</th>
+                      <th>管理</th>
+                    </tr>
+                  </thead>
+                  <tbody id="memberRows"></tbody>
+                </table>
+              </div>
+            </section>
+          </section>
+          <footer>
+            Team Capacity <span>v2.0.0 · 负荷有据，分配有度</span>
+          </footer>
+        </div>
+      </main>
+    </div>
+    <dialog id="memberDialog">
+      <form id="memberForm">
+        <div class="panel-heading">
+          <h2 id="dialogTitle">新增成员</h2>
+          <button type="button" id="closeDialog" aria-label="关闭">×</button>
+        </div>
+        <input name="id" type="hidden" /><input
+          name="revision"
+          type="hidden"
+        /><label
+          >成员姓名<input
+            name="name"
+            maxlength="80"
+            required
+            autocomplete="off" /></label
+        ><label>所属小组<select name="team_group" required></select></label
+        ><label>核心能力<select name="capability_type"></select></label
+        ><label>默认工作类型<select name="work_pattern"></select></label>
+        <p id="dialogError" role="alert" class="error"></p>
+        <div class="form-footer">
+          <button type="button" id="cancelDialog">取消</button
+          ><button type="submit" class="primary">保存成员</button>
+        </div>
+      </form>
+    </dialog>
+  </body>
+</html>
